@@ -37,6 +37,9 @@ contract FantomBallot {
     // ballot exposes the main information about this ballot.
     Ballot public ballot;
 
+    // number of proposals in the ballot
+    uint public proposalsCount;
+
     // proposals represent an array of proposals available on this ballot.
     Proposal[] public proposals;
 
@@ -83,6 +86,9 @@ contract FantomBallot {
                 weight : 0
                 }));
         }
+
+        // expose the number of proposals in the ballot
+        proposalsCount = proposalNames.length;
     }
 
     // vote processes a new incoming vote to proposal
