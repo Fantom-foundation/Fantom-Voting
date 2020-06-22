@@ -93,7 +93,7 @@ contract FantomBallot {
 
     // vote processes a new incoming vote to proposal
     // by the index, e.g. proposals[proposal]
-    function vote(uint proposal) public payable {
+    function vote(uint proposal) public {
         // check start and end of ballot criteria before deciding on the vote
         require(now >= ballot.start, "You can not vote, ballot is not open yet.");
         require(now < ballot.end, "You can not vote, ballot is already closed.");
@@ -117,7 +117,7 @@ contract FantomBallot {
     // weight totals in WEI adjusting the corresponding voted options as well.
     // The total for each address is calculated off-chain and fed in by an off-chain
     // server after the ballot ends.
-    function feedWeights(address[] memory voters, uint[] memory totals, uint[] memory stamps) public payable {
+    function feedWeights(address[] memory voters, uint[] memory totals, uint[] memory stamps) public {
         // ballot has to be beyond it's end; no totals updates before it's over
         require(now > ballot.end, "Ballot is still active, can not proceed.");
 
@@ -163,7 +163,7 @@ contract FantomBallot {
 
     // finalize calculates the winning proposal and locks the winner against
     // any weight manipulation.
-    function finalize() public payable {
+    function finalize() public {
         // ballot has to be beyond it's end; no totals updates before it's over
         require(now > ballot.end, "Ballot is still active, can not proceed.");
 

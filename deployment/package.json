@@ -1,0 +1,31 @@
+{
+  "name": "fantom-voting-deployment",
+  "version": "1.0.0",
+  "description": "Fantom Voting contract deployment script.",
+  "main": "deploy.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fantom-foundation/Fantom-Voting.git"
+  },
+  "keywords": [
+    "fantom",
+    "fantom-foundation",
+    "smart-contract",
+    "blockchain",
+    "web3js"
+  ],
+  "author": "Jiri Malek",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Fantom-foundation/Fantom-Voting/issues"
+  },
+  "homepage": "https://github.com/Fantom-foundation/Fantom-Voting#README.md",
+  "dependencies": {
+    "ethereumjs-tx": "^2.1.2",
+    "md5-file": "^5.0.0",
+    "moment": "^2.27.0",
+    "solc": "^0.6.10",
+    "web3": "^1.2.9"
+  }
+}
