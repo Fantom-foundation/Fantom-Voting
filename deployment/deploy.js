@@ -86,15 +86,17 @@ deploy(
     client,
     abiFilePath,
     byteCodeFilePath,
-    "The best Simpsons member?",
+    "What feature do you want next?",
     "https://github.com/Fantom-foundation/Fantom-Voting",
     moment("2020-06-22 00:00:00"),
-    moment("2020-06-22 18:00:00"),
-    ["Homer", "Marge", "Bart", "Lisa", "Maggie"]
+    moment("2020-06-23 23:59:59"),
+    ["Address Book", "Night Mode", "PIN Lock"]
 ).then((res) => {
     // log the success
     console.log(res, "\nDeployed.\n");
+    return 0;
 }).catch(err => {
     // log the error
     console.log("\nError happened.\n", err, "\n");
+    return 1;
 });
