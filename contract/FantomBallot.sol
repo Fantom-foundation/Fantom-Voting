@@ -4,17 +4,20 @@ pragma solidity ^0.5.0;
 contract FantomBallot {
     // Ballot structure represents a ballot information.
     struct Ballot {
-        bytes32 name; // short name of the ballot
-        string url; // the ballot details web page URL
-        uint start; // ballot start timestamp; votes before start are rejected
-        uint end; // ballot end timestamp; votes after end are rejected
-        bool finalized; // is the ballot finalized and all weights calculated?
+        bytes32 name;    // short name of the ballot
+        string url;      // the ballot details web page URL
+        uint start;      // ballot start timestamp; votes before start are rejected
+        uint end;        // ballot end timestamp; votes after end are rejected
+        bool finalized;  // is the ballot finalized and all weights calculated?
+        uint votes;      // number of votes made
+        uint feeds;      // number of weight feeds received on finalization
     }
 
     // Proposal structure represents an option voters can vote for.
     struct Proposal {
-        bytes32 name;   // short name of the option (max 32 bytes)
-        uint weight; // accumulated proposal weight in WEI across all votes favoring it
+        bytes32 name; // short name of the option (max 32 bytes)
+        uint weight;  // accumulated proposal weight in WEI across all votes favoring it
+        uint votes;   // accumulated number of votes for this proposal
     }
 
     // Vote represents a voter's decision in the ballot.
@@ -25,10 +28,10 @@ contract FantomBallot {
     // It includes available balance, delegations, rewards, and stakes
     // of the voter's address.
     struct Vote {
-        uint vote; // index of the proposal the voter voted for
-        uint voted; // timestamp of the vote; set value signals processed vote
-        uint weight; // weight of the vote in WEI
-        uint weightStamp; // timestamp of the weight updated
+        uint vote;         // index of the proposal the voter voted for
+        uint voted;        // timestamp of the vote; set value signals processed vote
+        uint weight;       // weight of the vote in WEI
+        uint weightStamp;  // timestamp of the weight updated
     }
 
     // chairperson represents the address of the chairperson controlling the ballot.
@@ -36,9 +39,6 @@ contract FantomBallot {
 
     // ballot exposes the main information about this ballot.
     Ballot public ballot;
-
-    // number of proposals in the ballot
-    uint public proposalsCount;
 
     // proposals represent an array of proposals available on this ballot.
     Proposal[] public proposals;
@@ -74,8 +74,17 @@ contract FantomBallot {
             url : url,
             start : start,
             end : end,
-            finalized : false
+            finalized : false,
+            votes : 0,
+            feeds : 0
             });
+
+        // push a default proposal first (will be always index 0)
+        proposals.push(Proposal({
+            name : "None",
+            weight : 0,
+            votes : 0
+            }));
 
         // make a proposal structure for each name given
         // and add it to the proposals structure
@@ -83,20 +92,23 @@ contract FantomBallot {
             // push the Proposal to the container
             proposals.push(Proposal({
                 name : proposalNames[i],
-                weight : 0
+                weight : 0,
+                votes : 0
                 }));
         }
+    }
 
-        // expose the number of proposals in the ballot
-        proposalsCount = proposalNames.length;
+    // proposalsCount returns the number of proposals in the ballot.
+    function proposalsCount() view public returns (uint) {
+        return proposals.length;
     }
 
     // vote processes a new incoming vote to proposal
     // by the index, e.g. proposals[proposal]
     function vote(uint proposal) public {
         // check start and end of ballot criteria before deciding on the vote
-        require(now >= ballot.start, "You can not vote, ballot is not open yet.");
-        require(now < ballot.end, "You can not vote, ballot is already closed.");
+        require(now >= ballot.start, "Ballot is not open yet.");
+        require(now < ballot.end, "Ballot is already closed.");
 
         // extract the vote for the current sender address
         Vote storage sender = votes[msg.sender];
@@ -109,6 +121,9 @@ contract FantomBallot {
         sender.voted = now;
         sender.vote = proposal;
 
+        // advance number of votes registered
+        ballot.votes++;
+
         // emit the voted event
         emit Voted(address(this), msg.sender, proposal);
     }
@@ -119,13 +134,13 @@ contract FantomBallot {
     // server after the ballot ends.
     function feedWeights(address[] memory voters, uint[] memory totals, uint[] memory stamps) public {
         // ballot has to be beyond it's end; no totals updates before it's over
-        require(now > ballot.end, "Ballot is still active, can not proceed.");
+        require(now > ballot.end, "Ballot is still active.");
 
         // no adjustments after it's finalized
-        require(!ballot.finalized, "The ballot has been finalized, no additional adjustments allowed.");
+        require(!ballot.finalized, "The ballot is already finalized.");
 
         // only chairperson can do this
-        require(msg.sender == chairperson, "Only chairperson can set vote weights.");
+        require(msg.sender == chairperson, "Only chairperson can feed weights.");
 
         // loop all incoming addresses and process them
         for (uint i = 0; i < voters.length; i++) {
@@ -140,6 +155,10 @@ contract FantomBallot {
 
                 // add the total of this voter to his selected proposal
                 proposals[isVote.vote].weight += totals[i];
+                proposals[isVote.vote].votes++;
+
+                // register the feed
+                ballot.feeds++;
             }
         }
     }
@@ -164,14 +183,17 @@ contract FantomBallot {
     // finalize calculates the winning proposal and locks the winner against
     // any weight manipulation.
     function finalize() public {
+        // only chairperson can do this
+        require(msg.sender == chairperson, "Only chairperson can finalize.");
+
         // ballot has to be beyond it's end; no totals updates before it's over
-        require(now > ballot.end, "Ballot is still active, can not proceed.");
+        require(now > ballot.end, "Ballot is still active.");
 
         // only one finalization allowed
-        require(!ballot.finalized, "The ballot has been finalized already.");
+        require(!ballot.finalized, "Ballot is already finalized.");
 
-        // only chairperson can do this
-        require(msg.sender == chairperson, "Only chairperson can finalize the ballot.");
+        // the number of votes and feeds must match
+        require(ballot.votes == ballot.feeds, "Missing voters feeds.");
 
         // set the ballot as finalized now
         ballot.finalized = true;
@@ -184,7 +206,7 @@ contract FantomBallot {
     // winner returns the winning proposal of this ballot.
     function winner() view public returns (uint, uint, bytes32) {
         // only finalized ballots have a winner
-        require(ballot.finalized, "The ballot has not been finalized yet.");
+        require(ballot.finalized, "Ballot is not finalized yet.");
 
         // calculate the winner
         uint winnerIndex = _winner();
