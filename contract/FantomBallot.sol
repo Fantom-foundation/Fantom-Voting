@@ -147,8 +147,12 @@ contract FantomBallot {
             // extract the vote for this processed address
             Vote storage isVote = votes[voters[i]];
 
-            // is there a valid vote for this address?
-            if ((isVote.voted > 0) && (proposals[isVote.vote].weight + totals[i] > proposals[isVote.vote].weight)) {
+            // is there a valid vote for this address && is this feed new for this vote?
+            // we don't accept feed for non-voters and we don't accept feed for voter already processed
+            // also make sure not to overflow the accumulated total
+            if ((isVote.voted > 0) && (isVote.weightStamp == 0) &&
+                (proposals[isVote.vote].weight + totals[i] >= proposals[isVote.vote].weight)
+            ) {
                 // add the weight to the vote
                 isVote.weight = totals[i];
                 isVote.weightStamp = stamps[i];
