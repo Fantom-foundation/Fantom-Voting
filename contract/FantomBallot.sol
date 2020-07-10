@@ -105,7 +105,7 @@ contract FantomBallot {
 
     // vote processes a new incoming vote to proposal
     // by the index, e.g. proposals[proposal]
-    function vote(uint proposal) public {
+    function vote(uint proposal) external {
         // check start and end of ballot criteria before deciding on the vote
         require(now >= ballot.start, "Ballot is not open yet.");
         require(now < ballot.end, "Ballot is already closed.");
@@ -132,7 +132,7 @@ contract FantomBallot {
     // weight totals in WEI adjusting the corresponding voted options as well.
     // The total for each address is calculated off-chain and fed in by an off-chain
     // server after the ballot ends.
-    function feedWeights(address[] memory voters, uint[] memory totals, uint[] memory stamps) public {
+    function feedWeights(address[] memory voters, uint[] memory totals, uint[] memory stamps) external {
         // ballot has to be beyond it's end; no totals updates before it's over
         require(now > ballot.end, "Ballot is still active.");
 
@@ -168,7 +168,7 @@ contract FantomBallot {
     }
 
     // _winner calculates the winning proposal fro the proposals weight.
-    function _winner() view private returns (uint) {
+    function _winner() view internal returns (uint) {
         // find the winner
         uint winnerIndex = 0;
         uint winnerWeight = 0;
@@ -186,7 +186,7 @@ contract FantomBallot {
 
     // finalize calculates the winning proposal and locks the winner against
     // any weight manipulation.
-    function finalize() public {
+    function finalize() external {
         // only chairperson can do this
         require(msg.sender == chairperson, "Only chairperson can finalize.");
 
